@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  skills-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Pinned to agentskills/agentskills@69ef37e. Bump deliberately.
+      - run: pip install "git+https://github.com/agentskills/agentskills.git@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref"
+      - run: python3 scripts/validate.py
+      - name: skills-ref validate
+        run: |
+          fail=0
+          for d in skills/*/; do skills-ref validate "$d" || fail=1; done
+          exit $fail
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks detect (full history)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks detect --source . --log-opts="--all" --redact -v
+
+  denylist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Denylist scan (patterns from DENYLIST secret)
+        env:
+          DENYLIST: ${{ secrets.DENYLIST }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess, sys
+          pats = [p for p in os.environ.get("DENYLIST", "").splitlines() if p.strip()]
+          if not pats:
+              print("::error::DENYLIST secret is empty or missing"); sys.exit(1)
+          rx = re.compile("|".join(f"(?:{p})" for p in pats))
+          hits = 0
+          for f in subprocess.check_output(["git", "ls-files"], text=True).splitlines():
+              try:
+                  lines = open(f, encoding="utf-8").read().splitlines()
+              except (UnicodeDecodeError, IsADirectoryError):
+                  continue
+              for i, line in enumerate(lines, 1):
+                  if rx.search(line):
+                      print(f"::error file={f},line={i}::denylist hit (pattern withheld)")
+                      hits += 1
+          print(f"{hits} hit(s) across {len(pats)} pattern(s)")
+          sys.exit(1 if hits else 0)
+          PY
+
+  author-email:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Every author email is noreply
+        run: |
+          bad=$(git log --all --format='%h %ae' | grep -Ev ' [0-9]+\+[A-Za-z0-9-]+@users\.noreply\.github\.com$' || true)
+          if [ -n "$bad" ]; then echo "::error::non-noreply author:"; echo "$bad" | cut -d' ' -f1; exit 1; fi
+          echo "all authors noreply"
