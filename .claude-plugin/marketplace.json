@@ -1,0 +1,36 @@
+{
+  "name": "moto-mode",
+  "owner": {
+    "name": "smallkinepro"
+  },
+  "metadata": {
+    "description": "Rules, gates, and verify loops for an AI coding team.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "moto-mode-skills",
+      "description": "moto-mode skills: build, verify, ship, data, review, and team gates.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/agent-design-bar",
+        "./skills/agent-skill-spec-check",
+        "./skills/build-ship",
+        "./skills/code-review-checklist",
+        "./skills/data-ingest-gate",
+        "./skills/design-qa",
+        "./skills/native-game-headless-verify",
+        "./skills/oss-scout-gate",
+        "./skills/pipeline-ship",
+        "./skills/repo-brief",
+        "./skills/report-publish-bar",
+        "./skills/ship-verify",
+        "./skills/skill-evolution-after-failure",
+        "./skills/spec-lock-pass",
+        "./skills/specialty-skill-tree",
+        "./skills/ticket-acceptance-criteria"
+      ]
+    }
+  ]
+}
