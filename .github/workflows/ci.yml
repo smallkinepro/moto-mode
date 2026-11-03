@@ -66,9 +66,11 @@ jobs:
   author-email:
     runs-on: ubuntu-latest
     steps:
+      # On PRs, check the real head, not GitHub's synthetic merge commit.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Every author email is noreply
         run: |
           bad=$(git log --all --format='%h %ae' | grep -Ev ' [0-9]+\+[A-Za-z0-9-]+@users\.noreply\.github\.com$' || true)
