@@ -1,0 +1,26 @@
+{
+  "name": "moto-mode",
+  "owner": {
+    "name": "smallkinepro"
+  },
+  "metadata": {
+    "description": "Rules, gates, and verify loops for an AI coding team.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "moto-mode-skills",
+      "description": "Core moto-mode skills: build, verify, ship, scout, and spec gates.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/build-ship",
+        "./skills/oss-scout-gate",
+        "./skills/pipeline-ship",
+        "./skills/repo-brief",
+        "./skills/ship-verify",
+        "./skills/spec-lock-pass"
+      ]
+    }
+  ]
+}
