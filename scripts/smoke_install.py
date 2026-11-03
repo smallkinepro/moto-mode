@@ -8,7 +8,7 @@ import json, pathlib, re, shutil, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKILLS = sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md"))
-RULES = sorted(p.stem for p in (ROOT / "rules").glob("*.md"))
+RULES = sorted(p.stem for p in (ROOT / "rules").glob("*.md") if p.name != "README.md")
 FM = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 
 

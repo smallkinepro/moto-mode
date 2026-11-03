@@ -66,14 +66,26 @@ jobs:
   author-email:
     runs-on: ubuntu-latest
     steps:
-      # On PRs, check the real head, not GitHub's synthetic merge commit.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Every author email is noreply
+      - name: Every author email in the PR / pushed range is noreply
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
         run: |
-          bad=$(git log --all --format='%h %ae' | grep -Ev ' [0-9]+\+[A-Za-z0-9-]+@users\.noreply\.github\.com$' || true)
+          if [ -n "$PR_BASE" ]; then
+            range="$PR_BASE..$PR_HEAD"            # every commit in the PR
+          elif [ -n "$BEFORE" ] && ! echo "$BEFORE" | grep -qE '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE..$AFTER"               # the pushed range
+          else
+            range="$AFTER"                        # new branch or rewritten base: whole history to head
+          fi
+          echo "checking $range ($(git rev-list --count $range) commit(s))"
+          bad=$(git log --format='%h %ae' $range | grep -Ev ' [0-9]+\+[A-Za-z0-9-]+@users\.noreply\.github\.com$' || true)
           if [ -n "$bad" ]; then echo "::error::non-noreply author:"; echo "$bad" | cut -d' ' -f1; exit 1; fi
           echo "all authors noreply"
 
